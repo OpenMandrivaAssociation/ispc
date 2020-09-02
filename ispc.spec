@@ -56,7 +56,7 @@ This package contains the examples binaries for the ispc SPMD compiler.
 %prep
 %autosetup -p1
 
-%patch109 -p1
+#patch109 -p1
 %patch110 -p1
 %patch111 -p1
 %patch112 -p1
