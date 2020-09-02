@@ -27,7 +27,7 @@ BuildRequires:	pkgconfig(zlib)
 ExclusiveArch:	x86_64 aarch64
 
 # https://fedoraproject.org/wiki/Changes/Stop-Shipping-Individual-Component-Libraries-In-clang-lib-Package
-Patch0:	0001-Link-against-libclang-cpp.so.patch
+#Patch0:	0001-Link-against-libclang-cpp.so.patch
 
 #
 # Fix examples path
@@ -63,7 +63,7 @@ This package contains the examples binaries for the ispc SPMD compiler.
 #patch200 -p1 -b .examples
 #patch201 -p1 -b .unused
 #patch202 -p1 -b .unsupport
-%patch0 -p1 -b .clang
+#patch0 -p1 -b .clang
 
 # Use gcc rather clang by default
 sed -i 's|set(CMAKE_C_COMPILER "clang")|set(CMAKE_C_COMPILER "gcc")|g' CMakeLists.txt
