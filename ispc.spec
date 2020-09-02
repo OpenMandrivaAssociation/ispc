@@ -66,8 +66,8 @@ This package contains the examples binaries for the ispc SPMD compiler.
 #patch0 -p1 -b .clang
 
 # Use gcc rather clang by default
-sed -i 's|set(CMAKE_C_COMPILER "clang")|set(CMAKE_C_COMPILER "gcc")|g' CMakeLists.txt
-sed -i 's|set(CMAKE_CXX_COMPILER "clang++")|set(CMAKE_CXX_COMPILER "g++")|g' CMakeLists.txt
+#sed -i 's|set(CMAKE_C_COMPILER "clang")|set(CMAKE_C_COMPILER "gcc")|g' CMakeLists.txt
+#sed -i 's|set(CMAKE_CXX_COMPILER "clang++")|set(CMAKE_CXX_COMPILER "g++")|g' CMakeLists.txt
 
 # Delete unrecognized command options from gcc-c++
 sed -i 's|-Wno-c99-extensions -Wno-deprecated-register||g' CMakeLists.txt
