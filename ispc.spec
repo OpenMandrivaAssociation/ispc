@@ -38,9 +38,9 @@ Patch0:	0001-Link-against-libclang-cpp.so.patch
 #Patch112:	0112-Adjust-fix-1844-run-only-for-10.0-and-generate-objec.patch
 
 #
-Patch200:	ispc-1.11.0-examples-path.patch
-Patch201:	ispc-1.13.0-remove-unused-variables.patch
-Patch202:	ispc-1.13.0-remove-unsupported-flags.patch
+#Patch200:	ispc-1.11.0-examples-path.patch
+#Patch201:	ispc-1.13.0-remove-unused-variables.patch
+#Patch202:	ispc-1.13.0-remove-unsupported-flags.patch
 
 %description
 A compiler for a variant of the C programming language, with extensions for
@@ -60,9 +60,9 @@ This package contains the examples binaries for the ispc SPMD compiler.
 #patch110 -p1
 #patch111 -p1
 #patch112 -p1
-%patch200 -p1 -b .examples
-%patch201 -p1 -b .unused
-%patch202 -p1 -b .unsupport
+#patch200 -p1 -b .examples
+#patch201 -p1 -b .unused
+#patch202 -p1 -b .unsupport
 %patch0 -p1 -b .clang
 
 # Use gcc rather clang by default
