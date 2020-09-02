@@ -1,0 +1,206 @@
+From 0696b2b5813310471dcd84d1d5e8183cd9ec5f88 Mon Sep 17 00:00:00 2001
+From: Dmitry Babokin <dmitry.y.babokin@intel.com>
+Date: Wed, 5 Aug 2020 13:24:57 -0700
+Subject: [PATCH 111/112] Rebuild LLVM with and without asserts enabled
+
+---
+ .github/workflows/rebuild-llvm10.yml     | 117 +++++++++++++++++++++++
+ docker/ubuntu/full_ispc_build/Dockerfile |   3 +-
+ docker/ubuntu/llvm_build/Dockerfile      |   3 +-
+ 3 files changed, 121 insertions(+), 2 deletions(-)
+
+diff --git a/.github/workflows/rebuild-llvm10.yml b/.github/workflows/rebuild-llvm10.yml
+index f2c58f63..6a75f086 100644
+--- a/.github/workflows/rebuild-llvm10.yml
++++ b/.github/workflows/rebuild-llvm10.yml
+@@ -43,8 +43,39 @@ jobs:
+       with:
+         name: llvm10_linux
+         path: docker/ubuntu/llvm_build/llvm-10.0.1-ubuntu16.04-Release+Asserts-x86.arm.wasm.tar.xz
+ 
++  linux-build-release:
++    runs-on: ubuntu-latest
++
++    steps:
++    - uses: actions/checkout@v2
++      with:
++        submodules: true
++
++    - name: Check environment
++      run: |
++        cat /proc/cpuinfo
++
++    - name: Build LLVM
++      run: |
++        cd docker/ubuntu/llvm_build
++        docker build --tag ispc/ubuntu16.04 --build-arg REPO=$GITHUB_REPOSITORY --build-arg SHA=$GITHUB_SHA --build-arg EXTRA_BUILD_ARG="--llvm-disable-assertions" .
++
++    - name: Pack LLVM
++      run: |
++        cd docker/ubuntu/llvm_build
++        docker run ispc/ubuntu16.04
++        export CONTAINER=`docker ps --all |head -2 |tail -1 |awk '//{print $1}'`
++        sudo docker cp $CONTAINER:/usr/local/src/llvm/bin-10.0 .
++        tar cJvf llvm-10.0.1-ubuntu16.04-Release-x86.arm.wasm.tar.xz bin-10.0
++
++    - name: Upload package
++      uses: actions/upload-artifact@v2
++      with:
++        name: llvm10rel_linux
++        path: docker/ubuntu/llvm_build/llvm-10.0.1-ubuntu16.04-Release-x86.arm.wasm.tar.xz
++
+   win-build:
+     runs-on: windows-latest
+ 
+     steps:
+@@ -86,8 +117,51 @@ jobs:
+       with:
+         name: llvm10_win
+         path: llvm/llvm-10.0.1-win.vs2019-Release+Asserts-x86.arm.wasm.zip
+ 
++  win-build-release:
++    runs-on: windows-latest
++
++    steps:
++    - uses: actions/checkout@v2
++      with:
++        submodules: true
++
++    - name: Setup MSBuild.exe
++      uses: microsoft/setup-msbuild@v1
++
++    - name: Check environment
++      shell: cmd
++      run: |
++        wmic cpu get caption, deviceid, name, numberofcores, maxclockspeed, status
++
++    - name: Install dependencies
++      shell: cmd
++      run: |
++        mkdir llvm
++        echo ::set-env name=LLVM_HOME::%GITHUB_WORKSPACE%\llvm
++        echo ::set-env name=ISPC_HOME::%GITHUB_WORKSPACE%
++
++    - name: Build LLVM
++      shell: cmd
++      run: |
++        echo %LLVM_HOME%
++        echo %ISPC_HOME%
++        python ./alloy.py -b --version=10.0 --verbose --llvm-disable-assertions
++        cd alloy_results* && type alloy_build.log
++
++    - name: Pack LLVM
++      shell: cmd
++      run: |
++        cd llvm
++        7z.exe a -t7z llvm-10.0.1-win.vs2019-Release-x86.arm.wasm.zip bin-10.0
++
++    - name: Upload package
++      uses: actions/upload-artifact@v2
++      with:
++        name: llvm10rel_win
++        path: llvm/llvm-10.0.1-win.vs2019-Release-x86.arm.wasm.zip
++
+   mac-build:
+     runs-on: macos-10.15
+ 
+     steps:
+@@ -129,4 +203,47 @@ jobs:
+       with:
+         name: llvm10_macos
+         path: llvm/llvm-10.0.1-macos10.15-Release+Asserts-x86.arm.wasm.tar.xz
+ 
++  mac-build-release:
++    runs-on: macos-10.15
++
++    steps:
++    - uses: actions/checkout@v2
++      with:
++        submodules: true
++
++    - name: Install dependencies
++      run: |
++        ls -ald /Applications/Xcode*
++        xcrun --show-sdk-path
++        # There are several Xcode versions installed.
++        # /Applications/Xcode.app is a symlink pointing to the one that needs to be used.
++        # But the one, which is currently "selected" doesn't use symlink.
++        # We need canonical location to make resulting clang build working on other machines.
++        sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
++        xcrun --show-sdk-path
++        mkdir llvm
++        echo "::set-env name=LLVM_HOME::${GITHUB_WORKSPACE}/llvm"
++        echo "::set-env name=ISPC_HOME::${GITHUB_WORKSPACE}"
++
++    - name: Check environment
++      run: |
++        ./check_env.py
++        which -a clang
++        sysctl -n machdep.cpu.brand_string
++
++    - name: Build LLVM
++      run: |
++        ./alloy.py -b --version=10.0 --selfbuild --verbose --llvm-disable-assertions
++
++    - name: Pack LLVM
++      run: |
++        cd llvm
++        tar cJvf llvm-10.0.1-macos10.15-Release-x86.arm.wasm.tar.xz bin-10.0
++
++    - name: Upload package
++      uses: actions/upload-artifact@v2
++      with:
++        name: llvm10rel_macos
++        path: llvm/llvm-10.0.1-macos10.15-Release-x86.arm.wasm.tar.xz
++
+diff --git a/docker/ubuntu/full_ispc_build/Dockerfile b/docker/ubuntu/full_ispc_build/Dockerfile
+index 73889f49..a6166eeb 100644
+--- a/docker/ubuntu/full_ispc_build/Dockerfile
++++ b/docker/ubuntu/full_ispc_build/Dockerfile
+@@ -3,8 +3,9 @@ MAINTAINER Dmitry Babokin <dmitry.y.babokin@intel.com>
+ 
+ ARG REPO=ispc/ispc
+ ARG SHA=master
+ ARG LLVM_VERSION=10.0
++ARG EXTRA_BUILD_ARG=
+ 
+ # !!! Make sure that your docker config provides enough memory to the container,
+ # otherwise LLVM build may fail, as it will use all the cores available to container.
+ 
+@@ -46,9 +47,9 @@ WORKDIR /usr/local/src/ispc
+ # Note self-build options, it's required to build clang and ispc with the same compiler,
+ # i.e. if clang was built by gcc, you may need to use gcc to build ispc (i.e. run "make gcc"),
+ # or better do clang selfbuild and use it for ispc build as well (i.e. just "make").
+ # "rm" are just to keep docker image small.
+-RUN ./alloy.py -b --version=$LLVM_VERSION --selfbuild && \
++RUN ./alloy.py -b --version=$LLVM_VERSION --selfbuild $EXTRA_BUILD_ARG && \
+     rm -rf $LLVM_HOME/build-$LLVM_VERSION $LLVM_HOME/llvm-$LLVM_VERSION $LLVM_HOME/bin-"$LLVM_VERSION"_temp $LLVM_HOME/build-"$LLVM_VERSION"_temp
+ 
+ ENV PATH=$LLVM_HOME/bin-$LLVM_VERSION/bin:$PATH
+ 
+diff --git a/docker/ubuntu/llvm_build/Dockerfile b/docker/ubuntu/llvm_build/Dockerfile
+index ebac2b60..49032422 100644
+--- a/docker/ubuntu/llvm_build/Dockerfile
++++ b/docker/ubuntu/llvm_build/Dockerfile
+@@ -3,8 +3,9 @@ MAINTAINER Dmitry Babokin <dmitry.y.babokin@intel.com>
+ 
+ ARG REPO=ispc/ispc
+ ARG SHA=master
+ ARG LLVM_VERSION=10.0
++ARG EXTRA_BUILD_ARG=
+ 
+ # !!! Make sure that your docker config provides enough memory to the container,
+ # otherwise LLVM build may fail, as it will use all the cores available to container.
+ 
+@@ -48,8 +49,8 @@ WORKDIR /usr/local/src/ispc
+ # Note self-build options, it's required to build clang and ispc with the same compiler,
+ # i.e. if clang was built by gcc, you may need to use gcc to build ispc (i.e. run "make gcc"),
+ # or better do clang selfbuild and use it for ispc build as well (i.e. just "make").
+ # "rm" are just to keep docker image small.
+-RUN ./alloy.py -b --version=$LLVM_VERSION --selfbuild --verbose && \
++RUN ./alloy.py -b --version=$LLVM_VERSION --selfbuild --verbose $EXTRA_BUILD_ARG && \
+     rm -rf $LLVM_HOME/build-$LLVM_VERSION $LLVM_HOME/llvm-$LLVM_VERSION $LLVM_HOME/bin-"$LLVM_VERSION"_temp $LLVM_HOME/build-"$LLVM_VERSION"_temp
+ 
+ ENV PATH=$LLVM_HOME/bin-$LLVM_VERSION/bin:$PATH
+-- 
+2.21.3
