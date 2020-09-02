@@ -1,0 +1,22 @@
+diff -up ispc-1.11.0/examples/cmake/AddISPCExample.cmake.lib ispc-1.11.0/examples/cmake/AddISPCExample.cmake
+--- ispc-1.11.0/examples/cmake/AddISPCExample.cmake.lib	2019-05-25 14:18:45.618118167 +0200
++++ ispc-1.11.0/examples/cmake/AddISPCExample.cmake	2019-05-25 14:25:14.277488266 +0200
+@@ -143,15 +143,15 @@ function(add_ispc_example)
+     # Install example
+     # We do not need to include examples binaries to the package
+     if (NOT ISPC_PREPARE_PACKAGE)
+-        install(TARGETS ${example_NAME} RUNTIME DESTINATION examples/${example_NAME})
++        install(TARGETS ${example_NAME} RUNTIME DESTINATION lib/ispc/examples/${example_NAME})
+         if (example_DATA_FILES)
+             install(FILES ${example_DATA_FILES}
+-                    DESTINATION examples/${example_NAME})
++                    DESTINATION lib/ispc/examples/${example_NAME})
+         endif()
+ 
+         if (example_DATA_DIR)
+             install(DIRECTORY ${example_DATA_DIR}
+-                    DESTINATION examples/${example_NAME})
++                    DESTINATION lib/ispc/examples/${example_NAME})
+         endif()
+     endif()
+ 
