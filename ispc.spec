@@ -1,26 +1,14 @@
-%{!?cmake_build:%global cmake_build %make_build; cd ..;}
-%{!?%cmake_install:%global cmake_install %make_install -C build}
-
-%global with_snapshot 0
-%global commit 34da2d23bbf32abf44da11d2cdca595dc7318cec
-%global shortcommit %(c=%{commit}; echo ${c:0:7})
+#{!?cmake_build:%global cmake_build %make_build; cd ..;}
+#{!?%cmake_install:%global cmake_install %make_install -C build}
 
 Name:		ispc
-Version:	1.14.0	
-%if %{with_snapshot}
-Release:	20190305.%{shortcommit}
-%else
-Release:	%mkrel 1
-%endif
+Version:	1.14.0
+Release:	1
 Summary:	C-based SPMD programming language compiler
 Group:		Development/C
 License:	BSD
 URL:		https://ispc.github.io/
-%if %{with_snapshot}
-Source0:	https://github.com/%{name}/%{name}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
-%else
 Source0:	https://github.com/%{name}/%{name}/archive/v%{version}/%{name}-%{version}.tar.gz
-%endif
 
 BuildRequires:	bison
 BuildRequires:	cmake
@@ -66,11 +54,8 @@ Group:          Development/C
 This package contains the examples binaries for the ispc SPMD compiler.
 
 %prep
-%if %{with_snapshot}
-%setup -n %{name}-%{commit}
-%else
-%setup
-%endif
+%autosetup -p1
+
 %patch109 -p1
 %patch110 -p1
 %patch111 -p1
@@ -78,9 +63,7 @@ This package contains the examples binaries for the ispc SPMD compiler.
 %patch200 -p1 -b .examples
 %patch201 -p1 -b .unused
 %patch202 -p1 -b .unsupport
-%if %{mgaversion} >= 8
 %patch0 -p1 -b .clang
-%endif
 
 # Use gcc rather clang by default
 sed -i 's|set(CMAKE_C_COMPILER "clang")|set(CMAKE_C_COMPILER "gcc")|g' CMakeLists.txt
@@ -103,7 +86,7 @@ pathfix.py -pni "%{__python3} %{py3_shbang_opts}" .
 	-DISPC_NO_DUMPS=ON \
 	.
 	
-%cmake_build
+%make_build
 
 (
  cd ./docs/
@@ -112,7 +95,7 @@ pathfix.py -pni "%{__python3} %{py3_shbang_opts}" .
 
 %install
 mkdir -p %{buildroot}%{_libdir}/ispc
-%cmake_install
+%make_install - C build
 
 %files
 %license LICENSE.txt
