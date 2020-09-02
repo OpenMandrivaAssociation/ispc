@@ -18,6 +18,7 @@ BuildRequires:	flex
 BuildRequires:	git
 BuildRequires:	gcc-c++
 BuildRequires:	llvm-devel
+BuildRequires:	%{_lib}gpuruntime
 BuildRequires:	python-docutils
 BuildRequires:	pkgconfig(ncurses)
 BuildRequires:	pkgconfig(python)
