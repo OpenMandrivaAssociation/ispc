@@ -35,7 +35,7 @@ Patch0:	0001-Link-against-libclang-cpp.so.patch
 #Patch109:	0109-Fix-for-1844-backport-of-LLVM-patch.patch
 Patch110:	0110-Triger-LLVM-rebuild-not-only-in-master.patch
 Patch111:	0111-Rebuild-LLVM-with-and-without-asserts-enabled.patch
-Patch112:	0112-Adjust-fix-1844-run-only-for-10.0-and-generate-objec.patch
+#Patch112:	0112-Adjust-fix-1844-run-only-for-10.0-and-generate-objec.patch
 
 #
 Patch200:	ispc-1.11.0-examples-path.patch
