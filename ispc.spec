@@ -59,7 +59,7 @@ This package contains the examples binaries for the ispc SPMD compiler.
 #patch109 -p1
 %patch110 -p1
 %patch111 -p1
-%patch112 -p1
+#patch112 -p1
 %patch200 -p1 -b .examples
 %patch201 -p1 -b .unused
 %patch202 -p1 -b .unsupport
