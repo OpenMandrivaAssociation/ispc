@@ -18,9 +18,9 @@ BuildRequires:	flex
 BuildRequires:	git
 BuildRequires:	gcc-c++
 BuildRequires:	llvm-devel
-BuildRequires:	rst2html
+BuildRequires:	python-docutils
 BuildRequires:	pkgconfig(ncurses)
-BuildRequires:	pkgconfig(python3)
+BuildRequires:	pkgconfig(python)
 BuildRequires:	pkgconfig(zlib)
 
 # Exlcude architectures failing to build
