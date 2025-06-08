@@ -23,7 +23,8 @@ BuildRequires:	flex
 BuildRequires:	git
 BuildRequires:	gcc-c++
 BuildRequires:	llvm-devel
-BuildRequires:	python-docutils
+BuildRequires:	python%{pyver}dist(docutils)
+BuildRequires:	python%{pyver}dist(pygments)
 BuildRequires:	pkgconfig(gtest)
 BuildRequires:	pkgconfig(gmock)
 # intel oneapi level zero devel package
