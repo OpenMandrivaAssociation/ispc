@@ -1,109 +1,143 @@
-#{!?cmake_build:%global cmake_build %make_build; cd ..;}
-#{!?%cmake_install:%global cmake_install %make_install -C build}
+%define major 1
+%define minor 27
+%define libname %mklibname ispc
+%define devname %mklibname ispc -d
+%define static %mklibname ispc-static -d
 
 Name:		ispc
-Version:	1.14.0
+Version:	1.27.0
 Release:	1
 Summary:	C-based SPMD programming language compiler
 Group:		Development/C
-License:	BSD
+License:	BSD-3-Clause
 URL:		https://ispc.github.io/
+
 Source0:	https://github.com/%{name}/%{name}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:	bison
 BuildRequires:	cmake
+BuildRequires:	ninja
 BuildRequires:	clang-devel
 BuildRequires:	doxygen
 BuildRequires:	flex
 BuildRequires:	git
 BuildRequires:	gcc-c++
 BuildRequires:	llvm-devel
-BuildRequires:	%{_lib}gpuruntime
-BuildRequires:  %{_lib}tinfo6
 BuildRequires:	python-docutils
+BuildRequires:	pkgconfig(gtest)
+BuildRequires:	pkgconfig(gmock)
+# intel oneapi level zero devel package
+BuildRequires:	pkgconfig(level-zero)
 BuildRequires:	pkgconfig(ncurses)
 BuildRequires:	pkgconfig(python)
+BuildRequires:  pkgconfig(tbb)
+BuildRequires:	%{_lib}tbbind
 BuildRequires:	pkgconfig(zlib)
 
-# Exlcude architectures failing to build
-ExclusiveArch:	x86_64 aarch64
+Requires:	%{libname} = %{version}-%{release}
 
-# https://fedoraproject.org/wiki/Changes/Stop-Shipping-Individual-Component-Libraries-In-clang-lib-Package
-#Patch0:	0001-Link-against-libclang-cpp.so.patch
-
-#
-# Fix examples path
-# From git
-#Patch109:	0109-Fix-for-1844-backport-of-LLVM-patch.patch
-#Patch110:	0110-Triger-LLVM-rebuild-not-only-in-master.patch
-#Patch111:	0111-Rebuild-LLVM-with-and-without-asserts-enabled.patch
-#Patch112:	0112-Adjust-fix-1844-run-only-for-10.0-and-generate-objec.patch
-
-#
-#Patch200:	ispc-1.11.0-examples-path.patch
-#Patch201:	ispc-1.13.0-remove-unused-variables.patch
-#Patch202:	ispc-1.13.0-remove-unsupported-flags.patch
+# Upstream only supports these architectures
+ExclusiveArch:	x86_64 aarch64 znver1
 
 %description
 A compiler for a variant of the C programming language, with extensions for
 "single program, multiple data" (SPMD) programming.
 
-%package examples
-Summary:        Examples binaries for ispc
-Group:          Development/C
+##############################
+%package -n %{libname}
+Summary:	C-based SPMD programming language compiler library for %{name}
+Group:		System/Libraries
 
-%description examples
-This package contains the examples binaries for the ispc SPMD compiler.
+%description -n %{libname}
+Libary for a variant of the C programming language, with extensions for
+"single program, multiple data" (SPMD) programming.
+
+##############################
+%package -n %{devname}
+Summary:	Development files (Headers etc.) for %{name}
+Group:		Development/C and C++
+Requires:	%{name} = %{version}-%{release}
+
+%description -n %{devname}
+Development files (Headers etc.) for %{name}.
+
+##############################
+%package	-n %{static}
+Summary:	Static libraries for %{name} development
+Requires:	%{devname} = %{version}-%{release}
+
+%description -n %{static}
+The %{static} package includes static libraries needed
+to develop programs that use %{name}.
+
+##############################
 
 %prep
 %autosetup -p1
 
-#patch109 -p1
-#patch110 -p1
-#patch111 -p1
-#patch112 -p1
-#patch200 -p1 -b .examples
-#patch201 -p1 -b .unused
-#patch202 -p1 -b .unsupport
-#patch0 -p1 -b .clang
-
-# Use gcc rather clang by default
-#sed -i 's|set(CMAKE_C_COMPILER "clang")|set(CMAKE_C_COMPILER "gcc")|g' CMakeLists.txt
-#sed -i 's|set(CMAKE_CXX_COMPILER "clang++")|set(CMAKE_CXX_COMPILER "g++")|g' CMakeLists.txt
-
-# Delete unrecognized command options from gcc-c++
-sed -i 's|-Wno-c99-extensions -Wno-deprecated-register||g' CMakeLists.txt
-
-# Suppress warning message as error
-sed -i 's| -Werror ||g' CMakeLists.txt 
+# Remove git badge remote images from README
+sed -i '1,13d;134d;' README.md
 
 # Fix all Python shebangs recursively in .
 pathfix.py -pni "%{__python3} %{py3_shbang_opts}" .
 
-%build
 %cmake	\
+	-DCMAKE_INSTALL_PREFIX=%{_prefix} \
+	-DCMAKE_C_FLAGS:STRING="$CFLAGS %{optflags} -fPIE" \
+	-DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS %{optflags} -fPIE" \
 	-DCMAKE_EXE_LINKER_FLAGS:STRING="%{optflags} -fPIE" \
-	-DISPC_INCLUDE_EXAMPLES=ON \
-	-DISPC_INCLUDE_TESTS=OFF \
-	-DISPC_NO_DUMPS=ON \
-	.
-	
-%make_build
+	-DCURSES_CURSES_LIBRARY=%{_libdir}/libncurses.so \
+	-DISPC_INCLUDE_EXAMPLES=OFF \
+	-DISPC_INCLUDE_TESTS=ON \
+	-DISPCRT_BUILD_CPU=ON \
+	-DISPCRT_BUILD_GPU=ON \
+	-DISPCRT_BUILD_TESTS=OFF \
+	-G Ninja
 
+	# Removed option as it requires LLVM patching and the CMake LLVMGenXIntrinsicsPath
+	# variable to be populated.
+	#-DXE_ENABLED=ON \
+%build
+%ninja_build -C build
+
+# build docs
 (
  cd ./docs/
  ./build.sh
 )
 
+
 %install
-mkdir -p %{buildroot}%{_libdir}/ispc
-%make_install - C build
+%ninja_install -C build
+
+%check
+export PATH="${PATH}:%{buildroot}%{_bindir}"
+%{__python} scripts/run_tests.py
+
+%post -n %{libname} -p /sbin/ldconfig
+%postun -n %{libname} -p /sbin/ldconfig
 
 %files
-%license LICENSE.txt
-%doc docs/*.html docs/ReleaseNotes.txt
 %{_bindir}/%{name}
 %{_bindir}/check_isa
+%doc README.md
+%doc docs/*.html docs/ReleaseNotes.txt
+%license LICENSE.txt
 
-%files examples
-%{_prefix}/lib/ispc/examples
+%files -n %{libname}
+%{_libdir}/lib%{name}rt*.so.%{major}
+%{_libdir}/lib%{name}rt*.so.%{major}.%{minor}.*
+%license LICENSE.txt
+%doc README.md
+
+%files -n %{devname}
+%{_includedir}/ispcrt
+%{_libdir}/lib%{name}rt*.so
+%{_libdir}/cmake/%{name}rt-%{version}
+%license LICENSE.txt
+%doc README.md
+
+%files -n %{static}
+%{_libdir}/lib%{name}rt_static.a
+%license LICENSE.txt
+
