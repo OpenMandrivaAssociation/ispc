@@ -6,7 +6,7 @@
 
 Name:		ispc
 Version:	1.27.0
-Release:	1
+Release:	2
 Summary:	C-based SPMD programming language compiler
 Group:		Development/C
 License:	BSD-3-Clause
