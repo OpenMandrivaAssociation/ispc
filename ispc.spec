@@ -79,9 +79,6 @@ to develop programs that use %{name}.
 # Remove git badge remote images from README
 sed -i '1,13d;134d;' README.md
 
-# Fix all Python shebangs recursively in .
-pathfix.py -pni "%{__python3} %{py3_shbang_opts}" .
-
 %cmake	\
 	-DCMAKE_INSTALL_PREFIX=%{_prefix} \
 	-DCMAKE_C_FLAGS:STRING="$CFLAGS %{optflags} -fPIE" \
