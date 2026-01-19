@@ -5,8 +5,8 @@
 %define static %mklibname ispc-static -d
 
 Name:		ispc
-Version:	1.29.0
-Release:	2
+Version:	1.29.1
+Release:	1
 Summary:	C-based SPMD programming language compiler
 Group:		Development/C
 License:	BSD-3-Clause
