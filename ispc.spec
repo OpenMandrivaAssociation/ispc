@@ -1,11 +1,11 @@
 %define major 1
-%define minor 29
+%define minor 30
 %define libname %mklibname ispc
 %define devname %mklibname ispc -d
 %define static %mklibname ispc-static -d
 
 Name:		ispc
-Version:	1.29.1
+Version:	1.30.0
 Release:	1
 Summary:	C-based SPMD programming language compiler
 Group:		Development/C
