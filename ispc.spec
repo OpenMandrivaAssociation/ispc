@@ -6,26 +6,40 @@
 
 Name:		ispc
 Version:	1.30.0
-Release:	1
+Release:	2
 Summary:	C-based SPMD programming language compiler
 Group:		Development/C
 License:	BSD-3-Clause
 URL:		https://ispc.github.io/
-Source0:	https://github.com/%{name}/%{name}/archive/v%{version}/%{name}-%{version}.tar.gz
+Source0:	https://github.com/ispc/ispc/archive/v%{version}/%{name}-%{version}.tar.gz
+# repo - https://github.com/ispc/ispc
+
+BuildSystem:	cmake
+BuildOption(prep):	-p1
+BuildOption:	-DCMAKE_INSTALL_PREFIX="%{_prefix}"
+BuildOption:	-DCMAKE_C_FLAGS:STRING="$CFLAGS %{optflags} -fPIE"
+BuildOption:	-DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS %{optflags} -fPIE"
+BuildOption:	-DCMAKE_EXE_LINKER_FLAGS:STRING="%{optflags} -fPIE"
+BuildOption:	-DCURSES_CURSES_LIBRARY="%{_libdir}/libncurses.so"
+BuildOption:	-DISPC_INCLUDE_EXAMPLES:BOOL=OFF
+BuildOption:	-DISPC_INCLUDE_TESTS:BOOL=ON
+BuildOption:	-DISPCRT_BUILD_CPU:BOOL=ON
+BuildOption:	-DISPCRT_BUILD_GPU:BOOL=ON
+BuildOption:	-DISPCRT_BUILD_TESTS:BOOL=OFF
+BuildOption:	-DRISCV_ENABLED:BOOL=ON
+
 
 BuildRequires:	bison
 BuildRequires:	cmake
-BuildRequires:	ninja
-BuildRequires:	clang-devel
+BuildRequires:	cmake(clang)
+BuildRequires:	cmake(LLVM)
 BuildRequires:	doxygen
 BuildRequires:	flex
 BuildRequires:	git
 BuildRequires:	gcc-c++
-BuildRequires:	llvm-devel
-BuildRequires:	python%{pyver}dist(docutils)
-BuildRequires:	python%{pyver}dist(pygments)
-BuildRequires:	pkgconfig(gtest)
+BuildRequires:	ninja
 BuildRequires:	pkgconfig(gmock)
+BuildRequires:	pkgconfig(gtest)
 # intel oneapi level zero devel package
 BuildRequires:	pkgconfig(level-zero)
 BuildRequires:	pkgconfig(ncurses)
@@ -33,8 +47,10 @@ BuildRequires:	pkgconfig(python)
 BuildRequires:  pkgconfig(tbb)
 BuildRequires:	%{_lib}tbbind
 BuildRequires:	pkgconfig(zlib)
+BuildRequires:	python%{pyver}dist(docutils)
+BuildRequires:	python%{pyver}dist(pygments)
 
-Requires:	%{libname} = %{version}-%{release}
+Requires:	%{libname} = %{EVRD}
 
 # Upstream only supports these architectures
 # Upstream added experiemental riscv64 support in v1.29.0
@@ -57,7 +73,7 @@ Libary for a variant of the C programming language, with extensions for
 %package -n %{devname}
 Summary:	Development files (Headers etc.) for %{name}
 Group:		Development/C and C++
-Requires:	%{name} = %{version}-%{release}
+Requires:	%{name} = %{EVRD}
 
 %description -n %{devname}
 Development files (Headers etc.) for %{name}.
@@ -65,7 +81,7 @@ Development files (Headers etc.) for %{name}.
 ##############################
 %package	-n %{static}
 Summary:	Static libraries for %{name} development
-Requires:	%{devname} = %{version}-%{release}
+Requires:	%{devname} = %{EVRD}
 
 %description -n %{static}
 The %{static} package includes static libraries needed
@@ -73,41 +89,12 @@ to develop programs that use %{name}.
 
 ##############################
 
-%prep
-%autosetup -p1
-
-# Remove git badge remote images from README
-sed -i '1,13d;134d;' README.md
-
-%cmake	\
-	-DCMAKE_INSTALL_PREFIX=%{_prefix} \
-	-DCMAKE_C_FLAGS:STRING="$CFLAGS %{optflags} -fPIE" \
-	-DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS %{optflags} -fPIE" \
-	-DCMAKE_EXE_LINKER_FLAGS:STRING="%{optflags} -fPIE" \
-	-DCURSES_CURSES_LIBRARY=%{_libdir}/libncurses.so \
-	-DISPC_INCLUDE_EXAMPLES=OFF \
-	-DISPC_INCLUDE_TESTS=ON \
-	-DISPCRT_BUILD_CPU=ON \
-	-DISPCRT_BUILD_GPU=ON \
-	-DISPCRT_BUILD_TESTS=OFF \
-	-DRISCV_ENABLED=ON \
-	-G Ninja
-
-	# Removed option as it requires LLVM patching and the CMake LLVMGenXIntrinsicsPath
-	# variable to be populated.
-	#-DXE_ENABLED=ON \
-%build
-%ninja_build -C build
-
+%build -a
 # build docs
 (
  cd ./docs/
  ./build.sh
 )
-
-
-%install
-%ninja_install -C build
 
 %check
 export PATH="${PATH}:%{buildroot}%{_bindir}"
