@@ -1,17 +1,18 @@
 %define major 1
-%define minor 30
+%define minor 31
 %define libname %mklibname ispc
 %define devname %mklibname ispc -d
 %define static %mklibname ispc-static -d
 
 Name:		ispc
-Version:	1.30.0
-Release:	2
+Version:	1.31.0
+Release:	1
 Summary:	C-based SPMD programming language compiler
 Group:		Development/C
 License:	BSD-3-Clause
 URL:		https://ispc.github.io/
 Source0:	https://github.com/ispc/ispc/archive/v%{version}/%{name}-%{version}.tar.gz
+Patch0:	ispc-1.31.0-llvm-23.1.patch
 # repo - https://github.com/ispc/ispc
 
 BuildSystem:	cmake
